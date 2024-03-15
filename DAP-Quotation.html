@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<head>
+    <title>Autoquoting System</title>
+    <style>
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  width: 500px;
+  position: fixed; /* Set the position to fixed */
+  top: 50%; /* Center the container vertically */
+  left: 50%; /* Center the container horizontally */
+  transform: translate(-50%, -50%); /* Adjust centering */
+  max-height: 80%; /* Set the maximum height of the container */
+  overflow-y: auto; /* Enable vertical scrolling when needed */
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+form {
+  display: center;
+  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  gap: 20px; /* Spacing between grid elements */
+  margin-bottom: 10px;
+}
+
+label {
+  font-weight: bold;
+  margin: 0;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.button-container {
+  grid-column: 1 / span 2; /* Make the container span two columns */
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%; /* Button width takes up the container */
+}
+
+h2 {
+  margin-top: 20px;
+  text-align: center;
+}
+
+p {
+  margin: 5px 0;
+  text-align: center;
+}
+
+#rateTableContainer {
+  margin-top: 20px;
+}
+
+#rateTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#rateTable th,
+#rateTable td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+#rateTable th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+#rateTable tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+#rateTable tr:hover {
+  background-color: #ddd;
+}
+
+/* Aligning the specified labels to the right */
+label[for="portOfLoading"],
+label[for="portOfDestination"],
+label[for="region"] {
+  text-align: right;
+}
+
+/* Aligning the specified input fields to the right */
+input#portOfLoading,
+input#portOfDestination,
+input#region {
+  text-align: right;
+}
+    </style>
+ 
+</head>
+    <script>
+function calculateQuote() {
+    // Retrieve the input values
+    var portOfLoading = document.getElementById("portOfLoading").value;
+    var portOfDestination = document.getElementById("portOfDestination").value;
+    var region = document.getElementById("region").value;
+    var cbm = parseFloat(document.getElementById("cbm").value);
+    var valueInput = document.getElementById("value").value;
+    var value = valueInput === "" ? 0 : parseFloat(valueInput); // Set value to 0 if it's empty
+
+    // Retrieve the weight and convert to a number, set to 0 if it's empty
+    var weightInput = document.getElementById("weight").value;
+    var weight = weightInput === "" ? 0 : parseFloat(weightInput);
+
+    // Convert weight to CBM equivalent based on the formula 1000 = 1 CBM
+    var weightToCBM = weight / 1000;
+
+    // Use the larger value between cbm and weightToCBM for calculations
+    var cbmOrWeight = Math.max(cbm, weightToCBM);
+
+        // Rate table
+        var rateTable = {
+            "CHINA-BUSAN": {
+                THC: 6.82,
+                CFS: 7.27,
+                WFG: 0.32,
+                CCC: 2.27,
+                DRAYAGE: 11.36,
+                BAF: 16.00,
+                CAF: 2.00,
+                CRS: 4.00,
+                LSS: 3.00,
+                DOC: 45.45,
+                DO: 80.00,
+                CUSTOMS: 50
+            }
+        };
+
+        // Calculate item values
+        var itemValues = {};
+    itemValues["THC"] = cbmOrWeight * rateTable["CHINA-BUSAN"].THC;
+    itemValues["CFS"] = cbmOrWeight * rateTable["CHINA-BUSAN"].CFS;
+    itemValues["WFG"] = cbmOrWeight * rateTable["CHINA-BUSAN"].WFG;
+    itemValues["CCC"] = cbmOrWeight * rateTable["CHINA-BUSAN"].CCC;
+    itemValues["DRAYAGE"] = cbmOrWeight * rateTable["CHINA-BUSAN"].DRAYAGE;
+    itemValues["BAF"] = cbmOrWeight * rateTable["CHINA-BUSAN"].BAF;
+    itemValues["CAF"] = cbmOrWeight * rateTable["CHINA-BUSAN"].CAF;
+    itemValues["CRS"] = cbmOrWeight * rateTable["CHINA-BUSAN"].CRS;
+    itemValues["LSS"] = cbmOrWeight * rateTable["CHINA-BUSAN"].LSS;
+    itemValues["DOC"] = 1 * rateTable["CHINA-BUSAN"].DOC;
+    itemValues["DO"] = 1 * rateTable["CHINA-BUSAN"].DO;
+    itemValues["CUSTOMS"] = Math.max(value * 0.002, 50); // 0.2% of cif value (min 50)
+
+
+    // Calculate total quote
+    var quote = itemValues["THC"] + itemValues["CFS"] + itemValues["WFG"] + itemValues["CCC"] + itemValues["DRAYAGE"] + itemValues["BAF"] + itemValues["CAF"] + itemValues["CRS"] + itemValues["LSS"] + itemValues["DOC"] + itemValues["DO"] + itemValues["CUSTOMS"];
+
+    // Display the quote
+    document.getElementById("quoteResult").textContent = "Quote: " + quote.toFixed(2) + " USD";
+
+
+        // Display the rate table
+        var rateTableHTML = "<table id='rateTable'><tr><th>Item</th><th>Rate</th><th>Cost</th></tr>";
+        rateTableHTML += "<tr><td>THC</td><td>" + rateTable["CHINA-BUSAN"].THC + " USD</td><td>" + itemValues["THC"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>CFS</td><td>" + rateTable["CHINA-BUSAN"].CFS + " USD</td><td>" + itemValues["CFS"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>WFG</td><td>" + rateTable["CHINA-BUSAN"].WFG + " USD</td><td>" + itemValues["WFG"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>CCC</td><td>" + rateTable["CHINA-BUSAN"].CCC + " USD</td><td>" + itemValues["CCC"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>DRAYAGE</td><td>" + rateTable["CHINA-BUSAN"].DRAYAGE + " USD</td><td>" + itemValues["DRAYAGE"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>BAF</td><td>" + rateTable["CHINA-BUSAN"].BAF + " USD</td><td>" + itemValues["BAF"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>CAF</td><td>" + rateTable["CHINA-BUSAN"].CAF + " USD</td><td>" + itemValues["CAF"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>CRS</td><td>" + rateTable["CHINA-BUSAN"].CRS + " USD</td><td>" + itemValues["CRS"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>LSS</td><td>" + rateTable["CHINA-BUSAN"].LSS + " USD</td><td>" + itemValues["LSS"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>DOC FEE</td><td>" + rateTable["CHINA-BUSAN"].DOC + " USD</td><td>" + itemValues["DOC"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>DO FEE</td><td>" + rateTable["CHINA-BUSAN"].DO + " USD</td><td>" + itemValues["DO"].toFixed(2) + " USD</td></tr>";
+        rateTableHTML += "<tr><td>CUSTOMS (0.2% of cif value)</td><td>" + rateTable["CHINA-BUSAN"].CUSTOMS + " USD</td><td>" + itemValues["CUSTOMS"].toFixed(2) + " USD</td></tr>";
+
+        
+        rateTableHTML += "</table>";
+
+        document.getElementById("rateTableContainer").innerHTML = rateTableHTML;
+    }
+    </script>
+</head>
+<body>
+  <div class="container">
+      <div class="form-container">
+          <h1>DAP Auto Quotation</h1>
+          <p style="text-align: center; color: red; font-weight: bold; font-size: 14px; margin-top: 20px; margin-bottom: 30px;">
+              Transportation and storage fees are excluded from the quotation.
+          </p>
+          <!-- 여기에 <form> 태그 추가 -->
+          <form>
+              <label for="portOfLoading">Port Of Loading:</label>
+              <select id="portOfLoading">
+                  <option value="CHINA">CHINA</option>
+                  <option value="SHENZHEN">NOTHING</option>
+                  <!-- Add more options as needed -->
+              </select>
+              <br><br>
+
+              <label for="portOfDestination">Port Of Destination:</label>
+              <select id="portOfDestination">
+                  <option value="BUSAN">BUSAN</option>
+                  <option value="INCHEON">NOTHING</option>
+                  <!-- Add more options as needed -->
+              </select>
+              <br><br>
+
+              <label for="region">Region:</label>
+              <select id="region">
+                  <option value="SEOUL">SEOUL</option>
+                  <option value="SUWON">NOTHING</option>
+              </select>
+              <br><br>
+
+              <label for="cbm">CBM:</label>
+              <input type="number" id="cbm" step="0.01"><br><br>
+
+              <label for="value">Value(USD):</label>
+              <input type="number" id="value" step="0.01"><br><br>
+
+              <label for="weight">Weight:</label>
+              <input type="number" id="weight" step="0.01"><br><br>
+
+              <button type="button" onclick="calculateQuote()">Get Quote</button>
+          </form> <!-- 폼 태그 닫기 -->
+          <br>
+          <div id="quoteResult"></div>
+          <div id="rateTableContainer"></div>
+      </div>
+  </div>
+</body>
+</html>
